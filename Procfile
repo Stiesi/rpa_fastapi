@@ -1,0 +1,1 @@
+web: uvicorn rpa_fastapi:app
