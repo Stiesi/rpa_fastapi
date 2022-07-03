@@ -1,1 +1,1 @@
-web: uvicorn rpa_fastapi:app
+web: uvicorn rpa_fastapi:app --host=0.0.0.0 --port=${PORT:-5000}
