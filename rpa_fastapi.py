@@ -106,7 +106,7 @@ def create_transactions(transactions: DataFrame[Transactions]):
 
 
 @app.post('/rpa_fit/')
-def create_visco_fit(
+async def create_visco_fit(
     df: DataFrame[RPA_MeasurementIN],
     lowerTC: float = Form(80,ge=40,le=130, description = 'Lower Temperature Boundary in °C used for Fitting'),
     upperTC: float = Form(140,ge=90,le=200, description = 'upper Temperature Boundary in °C used for Fitting'),
