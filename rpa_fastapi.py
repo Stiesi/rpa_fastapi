@@ -22,6 +22,7 @@ from typing import Optional, Union
 from pydantic import BaseModel, Field
 
 from fastapi import FastAPI, File, Form, UploadFile
+from fastapi.responses import RedirectResponse
 from pandera.typing import DataFrame
 
 #from pandera.typing.fastapi import UploadFile
@@ -103,10 +104,16 @@ def create_transactions(transactions: DataFrame[Transactions]):
 
 
 
+@app.post("/rpa/mat", response_model=RPA_Model)
+def create_model(rpamodel: RPA_Model):
+    output = rpamodel#.assign(name="foo")
+    ...  # do other stuff, e.g. update backend database with transactions
+    return output
+
 
 
 @app.post('/rpa_fit/')
-async def create_visco_fit(
+def create_visco_fit(
     df: DataFrame[RPA_MeasurementIN],
     lowerTC: float = Form(80,ge=40,le=130, description = 'Lower Temperature Boundary in °C used for Fitting'),
     upperTC: float = Form(140,ge=90,le=200, description = 'upper Temperature Boundary in °C used for Fitting'),
@@ -183,14 +190,19 @@ def create_data_frame(
         res = create_visco_fit(df,80,140)
         print(res)
     except:
+        res = dict(error='no fit data')
         print('nix')
     
     return {'filename': data_file.filename, 
             'experiment':experiment, 
             'file_type': file_type, 
-            'file_id': file_id}
+            'file_id': file_id,
+            'fit': res}
 
-
+@app.get("/")
+async def redirect():
+    response = RedirectResponse(url='/docs')
+    return response
       
 if __name__ == '__main__':
     uvicorn.run(app, host="0.0.0.0", port=8000)
