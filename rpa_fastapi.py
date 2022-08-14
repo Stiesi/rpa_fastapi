@@ -213,7 +213,7 @@ def create_data_frame(
     if dffile:
         csvfile=base+'.csv'
         df.to_csv(csvfile)
-        return FileResponse(csvfile)
+        return FileResponse(csvfile,filename=csvfile)
     try:
         print(df.info())
         res = create_visco_fit(df,lowert,uppert)
@@ -233,7 +233,7 @@ def create_data_frame(
             filename=base,
             #directory='static',
         )
-        return FileResponse(fig, media_type="image/png")
+        return FileResponse(fig, media_type="image/png",filename=fig)
     if dfdata:
         data = df.to_json()
     else:
