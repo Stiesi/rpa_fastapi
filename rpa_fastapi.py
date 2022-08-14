@@ -151,8 +151,9 @@ def create_data_frame(
         data_file: UploadFile = File(...),
 		lowert: float = 80,
 		uppert: float = 140,
-        img: bool = True,
+        img: bool = False,
         dfdata: bool = False,
+        dffile: bool = False,
         #return_data: 
         ):
     
@@ -209,7 +210,10 @@ def create_data_frame(
             print(type(txt))
         df = rid.html2df(txt)
 
-
+    if dffile:
+        csvfile=base+'.csv'
+        df.to_csv(csvfile)
+        return FileResponse(csvfile)
     try:
         print(df.info())
         res = create_visco_fit(df,lowert,uppert)
