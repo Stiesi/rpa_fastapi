@@ -1,3 +1,4 @@
+from msilib.schema import Directory
 import uvicorn
 import os
 import json
@@ -7,6 +8,8 @@ import uuid
 import zipfile
 import gzip
 from fastapi.datastructures import Default
+#from fastapi.staticfiles import StaticFiles
+
 import pandas as pd
 
 #from deta import Deta
@@ -19,11 +22,14 @@ import pandera as pa
 
 from typing import Optional, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, HttpUrl
 
-from fastapi import FastAPI, File, Form, UploadFile
+from fastapi import FastAPI, File, Form, UploadFile, Body
 from fastapi.responses import RedirectResponse
+from fastapi.responses import FileResponse
 from pandera.typing import DataFrame
+
+
 
 #from pandera.typing.fastapi import UploadFile
 
@@ -82,8 +88,22 @@ class RPA_Model(BaseModel):
     paramC: float
     paramn: float
 
+class RPA_FitModel(RPA_Model):	
+	lowertc: float
+	uppertc: float
+	fit_quality: int
+
+class Experiment(BaseModel):
+    title: str = Field(default='RPA Test Data from today', description='Test description')
+    
+#class Image(BaseModel):
+#    url: HttpUrl
+#    name: str
 
 app = FastAPI()
+
+#app.mount("/static", StaticFiles(directory="static"), name="static")
+
 '''
 @app.post("/panderafile/", response_model=ResponseModel)
 def create_upload_file(
@@ -125,10 +145,15 @@ def create_visco_fit(
 
 @app.post('/upload_data/')
 def create_data_frame(
-        experiment: str = Form(...,description='id of experiment'),
-        file_type: Union[str ,None]='html',
-        file_id: str = Form(...),
+        #experiment: Experiment=Body(embed=True),
+        #file_type: Union[str ,None]='html',
+        #file_id: str = Form(...),
         data_file: UploadFile = File(...),
+		lowert: float = 80,
+		uppert: float = 140,
+        img: bool = True,
+        dfdata: bool = False,
+        #return_data: 
         ):
     
     #decoded = base64.b64decode(data_file.file)
@@ -187,17 +212,39 @@ def create_data_frame(
 
     try:
         print(df.info())
-        res = create_visco_fit(df,80,140)
+        res = create_visco_fit(df,lowert,uppert)
         print(res)
+        vm = RPA_FitModel(name='abc',paramA=res['A'],paramC=res['C'],paramn=res['n'],
+            id=1,
+            lowertc=res['lower T[C]'],
+            uppertc=res['upper T[C]'],
+            fit_quality=res['pp'])
     except:
         res = dict(error='no fit data')
+        vm = RPA_FitModel(name='error')
         print('nix')
     
+    if img:
+        fig=rid.plot(df,res,title=f"Bla from {data_file.filename}",
+            filename=base,
+            #directory='static',
+        )
+        return FileResponse(fig, media_type="image/png")
+    if dfdata:
+        data = df.to_json()
+    else:
+        data = {}
+
+        
+
+    
     return {'filename': data_file.filename, 
-            'experiment':experiment, 
-            'file_type': file_type, 
-            'file_id': file_id,
-            'fit': res}
+            #'experiment':experiment.title, 
+            #'file_type': file_type, 
+            #'file_id': file_id,
+            'rpa_model': vm,
+            'test_data':data,
+            }
 
 @app.get("/")
 async def redirect():

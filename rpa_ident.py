@@ -330,7 +330,7 @@ def f_visco(p,loggammap,tki,log_nstar):
     diffs = lognstar_model-log_nstar
     return diffs.flatten()
 
-def plot(df,para,title='RPA',filename='nstar'):
+def plot(df,para,title='RPA',filename='nstar',directory=''):
     A=para['A']
     C=para['C']
     n=para['n']
@@ -357,8 +357,11 @@ def plot(df,para,title='RPA',filename='nstar'):
              grid=True,ax=ax,ylabel='log n*',title=title,xlabel='Temperature in °C',
              )
     fig=ax.get_figure()
-    fig.savefig(filename+'.png')
-    
+    figname = filename+'.png'
+    fig.savefig(figname)
+    #if directory is not '':
+    #    url = f'{directory}/{figname}'
+    return figname
 
 if __name__=='__main__':
     import os
