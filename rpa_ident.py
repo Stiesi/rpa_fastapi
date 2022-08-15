@@ -364,7 +364,7 @@ def plot(df,para,title='RPA',filename='nstar',directory=''):
     #    url = f'{directory}/{figname}'
     return figname
 
-def plot_mpl(df,para,title='RPA Test and Model for viscoelastic Properties',
+def plot_mpl(df,para,title='RPA Test and Model for Viscous Properties',
              filename='nstar'):
     A=para['A']
     C=para['C']
