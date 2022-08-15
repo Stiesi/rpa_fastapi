@@ -12,6 +12,7 @@ import numpy as np
 from  scipy.optimize import leastsq
 import pandas as pd
 import gzip
+import matplotlib.pyplot as plt
 
 
 def find_tables(txt):#### to do?
@@ -363,10 +364,62 @@ def plot(df,para,title='RPA',filename='nstar',directory=''):
     #    url = f'{directory}/{figname}'
     return figname
 
+def plot_mpl(df,para,title='RPA Test and Model for viscoelastic Properties',
+             filename='nstar'):
+    A=para['A']
+    C=para['C']
+    n=para['n']
+    lowert = para['lower T[C]']
+    uppert = para['upper T[C]']
+    df['x']=np.log(df.gammap)
+    df['y']=1./(df.tempc+273.15)
+    # measured values
+    df['z']=np.log(df.nstar)
+    #df['z']=df.nstar
+    # model solution (analytical)
+    df['za']=df.apply(lambda x: viscosity_log(x.x,x.y,A,C,n),axis=1)
+    df['color']= np.where((df.tempc>lowert-10)&(df.tempc<uppert+20),1.0,0.5)
+    ix = (df.tempc>lowert)&(df.tempc<uppert)
+    
+    
+    
+    #fig = plt.figure()
+    fig, ax = plt.subplots(figsize=(10, 8))
+
+    ax.scatter(df[ix].tempc,df[ix].z,marker='o',color='#0000FF',alpha=0.7,
+               label=f'measurement: {filename}',s=9)
+    ax.scatter(df[ix].tempc,df[ix].za,marker='d',color='#FF0000',alpha=0.5,
+               label=f'model A={A:.2f}, C={C:.1f}, n={n:.4f}',
+               s=9)
+    ax.scatter(df[~ix].tempc,df[~ix].z,marker='o',color='#CCCCFF',alpha=0.2,s=5)
+    ax.scatter(df[~ix].tempc,df[~ix].za,marker='d',color='#FFCCCC',alpha=0.2,s=5)
+    ax.grid()
+    ax.legend()
+    ax.set_xlabel('Temperature in °C')
+    ax.set_ylabel('log n*')
+    ax.set_title(title)
+
+    xa = lowert
+    ya = df[ix].z.max()
+    ax.annotate('$log (n^*) = log (A)  + C * log(1/T_K) + (n-1) \cdot log(\dot{\gamma}) $', 
+                xy=(xa,ya),
+                xytext=(10,10),
+                xycoords='data',
+                textcoords='offset pixels')
+    
+
+    figname = filename+'.png'
+    fig.savefig(figname)
+    return figname
+    
+    
+
+
 if __name__=='__main__':
     import os
-    htmlfile=r"Rheology M-870-6 Batch 31.html"
+    htmlfile=r"RPA_Viscosity_M-870-6_2.html"
     #htmlfile=r"Rheology M-870-6 Batch 31.zip"
+    
     fullpath = os.path.join('testdata',htmlfile)
 
     with open(fullpath) as fi:
@@ -382,7 +435,7 @@ if __name__=='__main__':
     
     #df,res = fitdata(savename)        
 
-    para=fit_visco(df)
+    para=fit_visco(df,lowert=75,uppert=130)
     print(para)
     A=para['A']
     C=para['C']
@@ -405,24 +458,25 @@ if __name__=='__main__':
             ax=dfs.plot(x='tempc',y='z',label='%d: h=%.2f, gp=%.2f'%(testno,hrate,gammap),grid=True)
             dfs.plot(x='tempc',y='za',label='python h=%.2f, gp=%.2f'%(hrate,gammap),grid=True,ax=ax)
             #dfs.plot(x='tempc',y='za_matlab',label='mlab h=%.2f, gp=%.2f'%(hrate,gammap),grid=True,ax=ax)
-    
-    for gammap in df.gammap.unique():
-        dfs = df[(df.gammap==gammap)&(df.tempc>80)&(df.tempc<140)]
-        #print(len(dfs),dfs.gammap.iloc[0],dfs.hrate.iloc[0])
-        gammastr= dfs.gammap.iloc[0]
-        hrate = dfs.hrate.iloc[0]
         
-        ax=dfs.plot(x='tempc',y='z',
-                    label=' h=%.2f, gp=%.2f'%(hrate,gammastr),
-                    grid=True,
-                    style='.')
-        dfs.plot(x='tempc',y='za',
-                 label='python h=%.2f, gp=%.2f'%(hrate,gammastr),
-                 style='.',
-                 grid=True,ax=ax)
+        for gammap in df.gammap.unique():
+            dfs = df[(df.gammap==gammap)&(df.tempc>80)&(df.tempc<140)]
+            #print(len(dfs),dfs.gammap.iloc[0],dfs.hrate.iloc[0])
+            gammastr= dfs.gammap.iloc[0]
+            hrate = dfs.hrate.iloc[0]
+            
+            ax=dfs.plot(x='tempc',y='z',
+                        label=' h=%.2f, gp=%.2f'%(hrate,gammastr),
+                        grid=True,
+                        style='.')
+            dfs.plot(x='tempc',y='za',
+                     label='python h=%.2f, gp=%.2f'%(hrate,gammastr),
+                     style='.',
+                     grid=True,ax=ax)
         
         
 
     
-    
-    plot(df,para,title=htmlfile)
+    plt.close()
+    #plot(df,para,title=htmlfile)
+    plot_mpl(df,para,title=htmlfile)

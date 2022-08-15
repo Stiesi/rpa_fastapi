@@ -229,7 +229,8 @@ def create_data_frame(
         print('nix')
     
     if img:
-        fig=rid.plot(df,res,title=f"Bla from {data_file.filename}",
+        fig=rid.plot_mpl(df,res,
+            #title=f"Bla from {data_file.filename}",
             filename=base,
             #directory='static',
         )
